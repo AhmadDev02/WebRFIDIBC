@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+  <title>RabbitMQ Web MQTT Example</title>
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js" type="text/javascript"></script>
+  </head>
+  <body lang="en">
+    <h1>IBC</h1>
+    <ul id="ul">
+
+        </ul>
+
+    <script>
+        var has_had_focus = false;
+        var wsbroker = "localhost";  //mqtt websocket enabled broker
+        var wsport = 15675; // port for above
+
+        var client = new Paho.MQTT.Client(wsbroker, wsport, "/ws",
+            "bean_scan_web_client");
+            client.topic = "bean_scan"
+        client.onConnectionLost = function (responseObject) {
+            debug("CONNECTION LOST - " + responseObject.errorMessage);
+        };
+
+        client.onMessageArrived = function (message) {
+            debug("RECEIVE ON " + message.destinationName + " PAYLOAD " + message.payloadString);
+            var data = JSON.parse(message.payloadString);
+            $("#ul").append(`<li>${data.Code}</li>`)
+        };
+
+        var options = {
+            timeout: 3,
+            userName: 'IBC:admin',
+            password: 'admin123',  
+            keepAliveInterval: 30,
+            onSuccess: function () {
+                debug("CONNECTION SUCCESS");
+                client.subscribe("bean_scan", {qos: 1});
+            },
+            onFailure: function (message) {
+                debug("CONNECTION FAILURE - " + message.errorMessage);
+            }
+        };
+
+        if (location.protocol == "https:") {
+            options.useSSL = true;
+        }
+        function debug(log){
+            console.log(log);
+        }
+        debug("CONNECT TO " + wsbroker + ":" + wsport);
+        client.connect(options);
+    </script>
+  </body>
+</html>
